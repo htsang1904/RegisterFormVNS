@@ -56,7 +56,7 @@ const messages = {
       note: 'Note',
       screenshotNote: 'Take a screenshot of your successful payment',
 
-      viewTemplate: 'View Template',
+      viewTemplate: 'Create Template',
     },
   },
   vi: {
@@ -107,7 +107,7 @@ const messages = {
       note: 'Lưu ý',
       screenshotNote: 'Chụp màn hình thanh toán lệ phí thành công',
 
-      viewTemplate: 'Xem biểu mẫu',
+      viewTemplate: 'Tạo biểu mẫu',
     },
   },
 };

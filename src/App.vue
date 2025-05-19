@@ -34,7 +34,7 @@
         </div>
         <div class="form">
           <DxForm :form-data="formData" width="100%" label-mode="floating" :show-colon-after-label="true"
-            ref="billForm">
+            ref="registerForm">
             <DxGroupItem :caption="$t('message.titleGroupItem1')" css-class="custom-dxGroupItem">
               <DxItem data-field="candidateName" :editor-options="{ height: 34, placeholder: 'vd: Huynh Thanh Sang' }">
                 <DxLabel :text="$t('message.candidateName')" />
@@ -112,10 +112,27 @@
               >
               </DxItem>
             </DxGroupItem>
+            <DxItem
+                data-field="card_image"
+                template="captcha"
+              >
+              </DxItem>
             <DxButtonItem css-class="submit-btn", :button-options="buttonOptions" />
+            <template #captcha="{data}">
+              <div class="captcha-container">
+                <vue-recaptcha 
+                  class="recaptcha" 
+                  ref="recaptcha" 
+                  sitekey="6LfcsT4rAAAAAC9uDP0l4rIwbM1FAlvIlHvvvwJi"
+                  @verify="onCaptchaVerified"
+                  @expired="onCaptchaExpired">
+                </vue-recaptcha>
+              </div>
+            </template>
             <template #card-image="{data}">
               <div>
                  <DxFileUploader
+                  ref="cardUploader"
                   class="custom-uploader"
                   :select-button-text="$t('message.uploadCardImage')"
                   label-text=""
@@ -131,6 +148,7 @@
             <template #passport-image>
               <div>
                  <DxFileUploader
+                 ref="passportUploader"
                  class="custom-uploader"
                   :select-button-text="$t('message.uploadPassportImage')"
                   label-text=""
@@ -146,6 +164,7 @@
             <template #payment-image>
               <div>
                  <DxFileUploader
+                 ref="paymentUploader"
                  class="custom-uploader"
                   :select-button-text="$t('message.uploadPaymentImage')"
                   label-text=""
@@ -198,6 +217,7 @@
         :show-close-button="true"
         :drag-enabled="false"
         :onHidden="closeFormPopup"
+        :onShown="openPdfPopup"
         :wrapper-attr="{ class: 'custom-popup' }"
       >
         <div id="pdf-content" class="pdf-file" style="height: 100%; font-family: Tinos;">
@@ -423,6 +443,8 @@ import { DxSwitch } from 'devextreme-vue/switch';
 import html2pdf from 'html2pdf.js';
 import axios from 'axios';
 const API_URL = process.env.VUE_APP_API_URL
+const siteKey = process.env.VUE_APP_CAPTCHA_KEY
+import { VueRecaptcha } from 'vue-recaptcha';
 export default {
   name: 'App',
   components: {
@@ -442,11 +464,12 @@ export default {
     DxCustomRule,
     DxFileUploader,
     DxPopup,
-    DxSwitch
+    DxSwitch,
+    VueRecaptcha
   },
   computed: {
     form() {
-      return this.$refs.billForm.instance;
+      return this.$refs.registerForm.instance;
     },
     hasPaid() {
       return this.formData.payment_image ? true : false;
@@ -470,6 +493,7 @@ export default {
       isEnglish: false,
       isFullScreen: false,
       loadingVisible: false,
+      siteKey: siteKey,
       gender: [
         {
           label: "Nam",
@@ -493,27 +517,50 @@ export default {
       isShowFormDetail: false,
       paymentImage: null,
       cardImage: null,
-      passportImage: null
+      passportImage: null,
+      isVerified: false,
+      captchaToken: ''
     }
   },
   methods: {
+    onCaptchaVerified(token) {
+      this.isVerified = true
+      this.captchaToken = token
+      console.log(this.captchaToken)
+    },
+    onCaptchaExpired() {
+      this.isVerified = false
+      this.captchaToken = ''
+    },
     async generatePDF() {
-      const element = document.getElementById("pdf-content");
-      await html2pdf().set({
+  const element = document.getElementById("pdf-content");
+
+  if (!element) {
+    console.warn("Không tìm thấy phần tử #pdf-content");
+    return;
+  }
+
+  try {
+    const pdfInstance = html2pdf().set({
       margin: 6,
       filename: 'DonDangKyThi-ExamReg.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2 ,ignoreElements: (element) => {
+      return element.tagName === 'IFRAME'; 
+    }},
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).output('blob').then((pdfBlob) => {
-      const pdfFile = new File([pdfBlob], 'DonDangKyThi-ExamReg.pdf', {
-        type: 'application/pdf',
-      });
-      this.pdfFile = pdfFile;
-    }).catch(err => {
-      console.log(err)
-    })
-    },
+    }).from(element);
+
+    const pdfBlob = await pdfInstance.output('blob');
+
+    this.pdfFile = new File([pdfBlob], 'DonDangKyThi-ExamReg.pdf', {
+      type: 'application/pdf',
+    });
+
+  } catch (err) {
+    console.error('Lỗi khi generatePDF:', err);
+  }
+},
     updateViewTemplateText() {
       this.buttonOptions.text = this.$t('message.viewTemplate');
     },
@@ -609,7 +656,10 @@ export default {
         this.showNotify('Vui lòng cập nhật ảnh thanh toán', 'error')
         return;
       }
-      console.log(this.formData)
+      if (!this.isVerified || !this.captchaToken) {
+         this.showNotify('Vui lòng xác minh captcha', 'error')
+        return;
+      }
       this.openFormDetailPopup()
     },
     showNotify(message, type) {
@@ -643,7 +693,7 @@ export default {
     openPaymentDetailPopup() {
       this.isShowPaymentDetail = true
     },
-    async openFormDetailPopup() {
+    openFormDetailPopup() {
       this.isShowFormDetail = true
     },
     closePopup() {
@@ -652,34 +702,56 @@ export default {
     closeFormPopup() {
       this.isShowFormDetail = false
     },
+    openPdfPopup() {
+      this.$nextTick(async()=> {
+        this.loadingVisible = true
+        await this.generatePDF()
+        this.loadingVisible = false
+        console.log(this.pdfFile)
+      })
+    },
     async sendMail() {
-      this.loadingVisible = true
-      await this.generatePDF()
-      const formData = new FormData();
-      const clearData = {
-        candidateName: this.formData.candidateName,
-        email: this.formData.email,
-      }
-      formData.append('formData', JSON.stringify(clearData));
-      formData.append('pdf', this.pdfFile);
-      formData.append('card_image', this.cardImage);
-      formData.append('passport_image', this.passportImage);
-      formData.append('payment_image', this.paymentImage);
+      try {
+        this.loadingVisible = true
 
-      await axios.post(`https://be.register-form-vns.io.vn/register`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then(res => {
+        if (!this.isVerified || !this.captchaToken) {
+          this.showNotify('Mã captcha đã quá hạn', 'error')
+          return;
+        }
+
+        const formData = new FormData();
+        const clearData = {
+          candidateName: this.formData.candidateName,
+          email: this.formData.email,
+        }
+
+        formData.append('formData', JSON.stringify(clearData));
+        formData.append('pdf', this.pdfFile);
+        formData.append('card_image', this.cardImage);
+        formData.append('passport_image', this.passportImage);
+        formData.append('payment_image', this.paymentImage);
+        formData.append('captchaToken', this.captchaToken);
+
+        const res = await axios.post(`https://be.register-form-vns.io.vn/register`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         this.showNotify('Chúc mừng bạn đã đăng ký thành công', 'success')
-        this.closeFormPopup()
         this.defaultFormData()
-        this.loadingVisible = false
-      }).catch(err => {
+        this.$refs.cardUploader.instance.reset();
+        this.$refs.passportUploader.instance.reset();
+        this.$refs.paymentUploader.instance.reset();
+        this.form.resetValues();
+        this.$refs.recaptcha.reset()
+        this.closeFormPopup()
+      } catch (err) {
         console.error('Lỗi gửi', err)
-        this.showNotify(err, 'error')
+        let message = err?.response?.data?.error || err.message || 'Đã xảy ra lỗi'
+        this.showNotify(message, 'error')
+      } finally {
         this.loadingVisible = false
-      });
+      }
     }
   },
 }
@@ -841,7 +913,11 @@ body {
 
           }
         }
-
+        .captcha-container {
+          margin-top: 10px;
+          display: flex;
+          justify-content: center;
+        }
       }
         .submit-btn {
           .dx-widget.dx-button.dx-button-mode-contained.dx-button-normal.dx-button-has-text {
