@@ -33,7 +33,7 @@ const messages = {
       candidateAddress: 'Address',
 
       uploadCardImage: 'Upload ID photo (3x4)',
-      uploadPassportImage: 'Upload front side of passport',
+      uploadPassportImage: 'Upload a photo of the passport information page',
       uploadBackPassportImage: 'Upload back side of passport',
       uploadPaymentImage: 'Upload screenshot of the completed bank transfer',
       paymentGuide: 'Payment instructions',
@@ -99,7 +99,7 @@ const messages = {
       candidateAddress: 'Địa chỉ',
 
       uploadCardImage: 'Upload ảnh thẻ (3x4)',
-      uploadPassportImage: 'Upload ảnh hộ chiếu mặt trước',
+      uploadPassportImage: 'Upload ảnh trang thông tin hộ chiếu',
       uploadBackPassportImage: 'Upload ảnh hộ chiếu mặt sau',
       uploadPaymentImage: 'Upload ảnh chụp màn hình chuyển khoản thành công',
       paymentGuide: 'Hướng dẫn thanh toán lệ phí',
@@ -132,7 +132,7 @@ const messages = {
   },
 };
 const i18n = new VueI18n({
-  locale: 'vi',
+  locale: 'en',
   messages,
 });
 new Vue({

@@ -101,11 +101,11 @@
                 template="front-passport-image"
               >
               </DxItem>
-              <DxItem
+              <!-- <DxItem
                 data-field="back_passport_image"
                 template="back-passport-image"
               >
-              </DxItem>
+              </DxItem> -->
             </DxGroupItem>
 
             <DxGroupItem :caption="$t('message.titleGroupItem4')" css-class="custom-dxGroupItem">
@@ -418,10 +418,7 @@
               </div>
               <div class="row" style="margin-top: 20px;display: flex;">
                   <div class="img">
-                    <img style="width: 40%;" :src="formData.passport_image" alt="">
-                  </div>
-                  <div class="img">
-                    <img style="width: 40%; margin-left: 20px;" :src="formData.back_passport_image" alt="">
+                    <img style="height: 150px;" :src="formData.passport_image" alt="">
                   </div>
               </div>
              </div>
@@ -514,7 +511,7 @@ export default {
     return {
       recaptchaLanguage: 'en',
       formData: {},
-      isEnglish: false,
+      isEnglish: true,
       isFullScreen: false,
       loadingVisible: false,
       siteKey: siteKey,
@@ -529,7 +526,7 @@ export default {
         }
       ],
       buttonOptions: {
-        text: 'Xem biểu mẫu',
+        text: 'Create Template',
         useSubmitBehavior: true,
         width: '100%',
         onClick: () => {
@@ -769,11 +766,11 @@ export default {
         formData.append('pdf', this.pdfFile);
         formData.append('card_image', this.cardImage);
         formData.append('passport_image', this.passportImage);
-        formData.append('back_passport_image', this.backPassportImage);
+        // formData.append('back_passport_image', this.backPassportImage);
         formData.append('payment_image', this.paymentImage);
         formData.append('captchaToken', this.captchaToken);
 
-        const res = await axios.post(`http://localhost:3000/register`, formData, {
+        const res = await axios.post(`https://be.register-form-vns.io.vn/register`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -783,7 +780,7 @@ export default {
         this.$refs.cardUploader.instance.reset();
         this.$refs.passportUploader.instance.reset();
         this.$refs.paymentUploader.instance.reset();
-        this.$refs.backPassportUploader.instance.reset();
+        // this.$refs.backPassportUploader.instance.reset();
         this.form.resetValues();
         this.$refs.recaptcha.reset()
         this.closeFormPopup()
