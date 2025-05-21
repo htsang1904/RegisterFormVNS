@@ -5,15 +5,19 @@ import 'devextreme/dist/css/dx.light.css';
 Vue.config.productionTip = false
 import VueI18n from 'vue-i18n'
 Vue.use(VueI18n);
+import { VueRecaptcha } from 'vue-recaptcha';
 
-
+Vue.component('vue-recaptcha', VueRecaptcha)
 const messages = {
   en: {
     message: {
+      registerTitle: "EXAM REGISTRATION INFORMATION",
+      submitButton: "Submit Registration",
       titleGroupItem1: 'Candidate information',
       titleGroupItem2: 'Contact information',
       titleGroupItem3: 'Document images',
       titleGroupItem4: 'Payment information',
+      titleRegisterPopup: 'Registration Form',
 
       candidateName: 'Full name (as in passport)',
       candidateBirth: 'Date of birth',
@@ -29,8 +33,9 @@ const messages = {
       candidateAddress: 'Address',
 
       uploadCardImage: 'Upload ID photo (3x4)',
-      uploadPassportImage: 'Upload passport front image',
-      uploadPaymentImage: 'Upload payment receipt photo',
+      uploadPassportImage: 'Upload front side of passport',
+      uploadBackPassportImage: 'Upload back side of passport',
+      uploadPaymentImage: 'Upload screenshot of the completed bank transfer',
       paymentGuide: 'Payment instructions',
 
       // Validation
@@ -38,14 +43,19 @@ const messages = {
       requiredBirth: 'Please select date of birth',
       invalidBirth: 'Invalid date',
       requiredPassport: 'Please enter passport number',
-      invalidPassport: 'Invalid passport number. Format: 1 letter + 7 digits (e.g., B1234567)',
+      invalidPassport: 'Invalid passport number. Please enter 5 to 15 characters, including only letters and numbers.',
       requiredNationality: 'Please enter nationality',
       requiredGender: 'Please select gender',
       requiredPhone: 'Please enter phone number',
-      invalidPhone: 'Invalid phone number. E.g., 0912345678',
+      invalidPhone: 'Invalid phone number. Please enter 6 to 15 digits, optionally starting with +',
       requiredEmail: 'Please enter email',
       invalidEmail: 'Invalid email',
       requiredAddress: 'Please enter address',
+
+      invalidUpdatePaymentImage: "Please upload a payment image",
+      invalidVerifyCaptcha: "Please verify the captcha",
+      invalidUpdatePassportImage: "Please upload your passport photo",
+      invalidUpdatePortraitImage: "Please upload a 3x4 photo",
 
       //popup thanh toán
       paymentDetailTitle: 'Payment Details',
@@ -61,10 +71,19 @@ const messages = {
   },
   vi: {
     message: {
+      registerTitle: "THÔNG TIN ĐĂNG KÝ DỰ THI",
+      submitButton: "Gửi thông tin đăng ký",
+
+      invalidUpdatePaymentImage: "Vui lòng cập nhật ảnh thanh toán",
+      invalidVerifyCaptcha: "Vui lòng xác minh captcha",
+      invalidUpdatePassportImage: "Vui lòng cập nhật ảnh hộ chiếu",
+      invalidUpdatePortraitImage: "Vui lòng cập nhật ảnh thẻ 3x4",
+
       titleGroupItem1: 'Thông tin thí sinh',
       titleGroupItem2: 'Thông tin liên hệ',
       titleGroupItem3: 'Thông tin hình ảnh chứng từ',
       titleGroupItem4: 'Thông tin thanh toán lệ phí',
+      titleRegisterPopup: 'Phiếu đăng ký',
 
       candidateName: 'Họ và tên (ghi đầy đủ như trong hộ chiếu)',
       candidateBirth: 'Ngày sinh',
@@ -81,7 +100,8 @@ const messages = {
 
       uploadCardImage: 'Upload ảnh thẻ (3x4)',
       uploadPassportImage: 'Upload ảnh hộ chiếu mặt trước',
-      uploadPaymentImage: 'Upload ảnh chụp hóa đơn thanh toán',
+      uploadBackPassportImage: 'Upload ảnh hộ chiếu mặt sau',
+      uploadPaymentImage: 'Upload ảnh chụp màn hình chuyển khoản thành công',
       paymentGuide: 'Hướng dẫn thanh toán lệ phí',
 
       // Validation
@@ -89,11 +109,11 @@ const messages = {
       requiredBirth: 'Vui lòng chọn ngày sinh',
       invalidBirth: 'Ngày không hợp lệ',
       requiredPassport: 'Vui lòng nhập Số hộ chiếu',
-      invalidPassport: 'Số hộ chiếu không hợp lệ. Định dạng: 1 chữ cái + 7 chữ số (VD: B1234567)',
+      invalidPassport: 'Số hộ chiếu không hợp lệ. Vui lòng nhập từ 5 đến 15 ký tự bao gồm chữ và số, không có ký tự đặc biệt.',
       requiredNationality: 'Vui lòng nhập Quốc tịch',
       requiredGender: 'Vui lòng chọn giới tính',
       requiredPhone: 'Vui lòng nhập số điện thoại',
-      invalidPhone: 'Số điện thoại không hợp lệ. VD: 0912345678',
+      invalidPhone: 'Số điện thoại không hợp lệ. Vui lòng nhập từ 6 đến 15 chữ số, có thể bắt đầu bằng dấu + nếu là mã quốc gia.',
       requiredEmail: 'Vui lòng nhập email',
       invalidEmail: 'Email không hợp lệ',
       requiredAddress: 'Vui lòng nhập địa chỉ',

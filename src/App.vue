@@ -21,11 +21,9 @@
           </div>
           <div class="header-title">
             <div class="title">
-              THÔNG TIN ĐĂNG KÝ DỰ THI
+              {{ $t('message.registerTitle') }}
             </div>
             <div class="des">
-              KỲ THI CHỨNG CHỈ TIẾNG VIỆT - 19/7/2025
-              <br>
               REGISTRATION FORM
               <br>
               VIETNAMESE PROFICIENCY TEST - 19 JULY, 2025 
@@ -55,7 +53,7 @@
                 <DxLabel :text="$t('message.passportCode')" />
                 <DxRequiredRule :message="$t('message.requiredPassport')" />
                 <DxPatternRule
-                  :pattern="/^[A-Z]{1}[0-9]{7}$/"
+                  :pattern="/^[A-Z0-9]{5,15}$/i"
                   :message="$t('message.invalidPassport')"
                 />
               </DxItem>
@@ -77,7 +75,7 @@
                 <DxLabel :text="$t('message.phoneNumber')" />
                 <DxRequiredRule :message="$t('message.requiredPhone')" />
                 <DxPatternRule
-                  :pattern="/^(0|\+84)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-5]|9[0-9])[0-9]{7}$/"
+                  :pattern="/^\+?[0-9]{6,15}$/"
                   :message="$t('message.invalidPhone')"
                 />
               </DxItem>
@@ -100,7 +98,12 @@
               </DxItem>
               <DxItem
                 data-field="passport_image"
-                template="passport-image"
+                template="front-passport-image"
+              >
+              </DxItem>
+              <DxItem
+                data-field="back_passport_image"
+                template="back-passport-image"
               >
               </DxItem>
             </DxGroupItem>
@@ -124,8 +127,10 @@
                   class="recaptcha" 
                   ref="recaptcha" 
                   sitekey="6LfcsT4rAAAAAC9uDP0l4rIwbM1FAlvIlHvvvwJi"
+                  :key="recaptchaLanguage"
                   @verify="onCaptchaVerified"
                   @expired="onCaptchaExpired">
+                  
                 </vue-recaptcha>
               </div>
             </template>
@@ -145,7 +150,7 @@
                 />
               </div>
             </template>
-            <template #passport-image>
+            <template #front-passport-image>
               <div>
                  <DxFileUploader
                  ref="passportUploader"
@@ -158,6 +163,22 @@
                   upload-url="https://js.devexpress.com/Demos/NetCore/FileUploader/Upload"
                   :input-attr="{ 'aria-label': $t('message.uploadPassportImage') }"
                   @valueChanged="handlePassportImageChange"
+                />
+              </div>
+            </template>
+            <template #back-passport-image>
+              <div>
+                 <DxFileUploader
+                 ref="backPassportUploader"
+                 class="custom-uploader"
+                  :select-button-text="$t('message.uploadBackPassportImage')"
+                  label-text=""
+                  width="100%"
+                  accept="image/*"
+                  upload-mode="useForm"
+                  upload-url="https://js.devexpress.com/Demos/NetCore/FileUploader/Upload"
+                  :input-attr="{ 'aria-label': $t('message.uploadBackPassportImage') }"
+                  @valueChanged="handleBackPassportImageChange"
                 />
               </div>
             </template>
@@ -175,7 +196,7 @@
                   :input-attr="{ 'aria-label': $t('message.uploadPaymentImage') }"
                   @valueChanged="handlePaymentImageChange"
                 />
-                <div class="payment-guide" @click="openPaymentDetailPopup">{{ $t('message.paymentGuide') }}</div>
+                <!-- <div class="payment-guide" @click="openPaymentDetailPopup">{{ $t('message.paymentGuide') }}</div> -->
               </div>
             </template>
           </DxForm>
@@ -209,7 +230,7 @@
       <DxPopup
         :visible="isShowFormDetail"
         :show-title="true"
-        title="Phiếu đăng ký"
+        :title="$t('message.titleRegisterPopup')"
         width="90%"
         max-width="800px"
         height="90vh"
@@ -397,13 +418,16 @@
               </div>
               <div class="row" style="margin-top: 20px;display: flex;">
                   <div class="img">
-                    <img style="height: 200px;" :src="formData.passport_image" alt="">
+                    <img style="width: 40%;" :src="formData.passport_image" alt="">
+                  </div>
+                  <div class="img">
+                    <img style="width: 40%; margin-left: 20px;" :src="formData.back_passport_image" alt="">
                   </div>
               </div>
              </div>
         </div>
         <div class="footer">
-          <button @click="sendMail">Gửi thông tin đăng ký</button>
+          <button @click="sendMail">{{ $t('message.submitButton') }}</button>
         </div>
       </DxPopup>
     </div>
@@ -444,7 +468,6 @@ import html2pdf from 'html2pdf.js';
 import axios from 'axios';
 const API_URL = process.env.VUE_APP_API_URL
 const siteKey = process.env.VUE_APP_CAPTCHA_KEY
-import { VueRecaptcha } from 'vue-recaptcha';
 export default {
   name: 'App',
   components: {
@@ -465,7 +488,6 @@ export default {
     DxFileUploader,
     DxPopup,
     DxSwitch,
-    VueRecaptcha
   },
   computed: {
     form() {
@@ -486,9 +508,11 @@ export default {
     } else {
       this.isFullScreen = false
     }
+    console.log(this.$refs.recaptcha)
   },
   data() {
     return {
+      recaptchaLanguage: 'en',
       formData: {},
       isEnglish: false,
       isFullScreen: false,
@@ -518,6 +542,7 @@ export default {
       paymentImage: null,
       cardImage: null,
       passportImage: null,
+      backPassportImage: null,
       isVerified: false,
       captchaToken: ''
     }
@@ -617,6 +642,20 @@ export default {
         this.formData.passport_image = null;
       }
     },
+    handleBackPassportImageChange(e) {
+      const file = e.value[0];
+      if (file && file.type.startsWith('image/')) {
+        console.log(file.type.startsWith('image/'))
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.formData.back_passport_image = reader.result;
+          this.backPassportImage = file
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.formData.back_passport_image = null;
+      }
+    },
     validateAmount(e) {
       return e.value > 10000;
     },
@@ -632,7 +671,8 @@ export default {
         email: '',
         card_image: null,
         passport_image: null,
-        payment_image: null
+        payment_image: null,
+        back_passport_image: null
       }
     },
     async handleSubmit() {
@@ -643,21 +683,21 @@ export default {
         return;
       }
       if (!this.formData.card_image) {
-        this.showNotify('Vui lòng cập nhật ảnh thẻ 3x4', 'error')
+        this.showNotify(this.$t('message.invalidUpdatePortraitImage'), 'error')
         return;
       }
 
       if (!this.formData.passport_image) {
-        this.showNotify('Vui lòng cập nhật ảnh hộ chiếu', 'error')
+        this.showNotify(this.$t('message.invalidUpdatePassportImage'), 'error')
         return;
       }
 
       if (!this.formData.payment_image) {
-        this.showNotify('Vui lòng cập nhật ảnh thanh toán', 'error')
+        this.showNotify(this.$t('message.invalidUpdatePaymentImage'), 'error')
         return;
       }
       if (!this.isVerified || !this.captchaToken) {
-         this.showNotify('Vui lòng xác minh captcha', 'error')
+         this.showNotify(this.$t('message.invalidVerifyCaptcha'), 'error')
         return;
       }
       this.openFormDetailPopup()
@@ -729,10 +769,11 @@ export default {
         formData.append('pdf', this.pdfFile);
         formData.append('card_image', this.cardImage);
         formData.append('passport_image', this.passportImage);
+        formData.append('back_passport_image', this.backPassportImage);
         formData.append('payment_image', this.paymentImage);
         formData.append('captchaToken', this.captchaToken);
 
-        const res = await axios.post(`https://be.register-form-vns.io.vn/register`, formData, {
+        const res = await axios.post(`http://localhost:3000/register`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -742,6 +783,7 @@ export default {
         this.$refs.cardUploader.instance.reset();
         this.$refs.passportUploader.instance.reset();
         this.$refs.paymentUploader.instance.reset();
+        this.$refs.backPassportUploader.instance.reset();
         this.form.resetValues();
         this.$refs.recaptcha.reset()
         this.closeFormPopup()
